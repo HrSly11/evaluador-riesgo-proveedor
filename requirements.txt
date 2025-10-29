@@ -1,0 +1,6 @@
+streamlit
+experta
+pandas
+plotly
+pytest
+pytest-cov
