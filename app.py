@@ -1,3 +1,10 @@
+import streamlit as st
+import fix_collections  # ← AÑADE ESTA LÍNEA AQUÍ (ANTES de los demás imports)
+
+# Ahora sí puedes importar engine
+from engine import MotorEvaluacionRiesgo, DatosProveedor, ExplicadorDecisiones
+
+# ... resto de tu código
 """
 Sistema Experto de Evaluación de Riesgo de Proveedores
 Aplicación principal con interfaz Streamlit
