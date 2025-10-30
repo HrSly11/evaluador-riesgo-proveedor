@@ -301,3 +301,40 @@ class MotorEvaluacionRiesgo(KnowledgeEngine):
             'factores_criticos': self.factores_criticos,
             'total_reglas_activadas': len(self.explicaciones)
         }
+
+
+def evaluar_proveedor(datos_proveedor: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Función de envoltura (wrapper) que recibe un diccionario de datos,
+    ejecuta el motor de inferencia y retorna un diccionario de resultados.
+    """
+    try:
+        # 1. Instanciar el motor
+        motor = MotorEvaluacionRiesgo()
+
+        # 2. Resetear (limpiar hechos anteriores)
+        motor.reset()
+
+        # 3. --- CORRECCIÓN CRÍTICA ---
+        # Declarar TODOS los datos como un ÚNICO hecho con múltiples atributos
+        motor.declare(DatosProveedor(**datos_proveedor))
+
+        # 4. Correr el motor (encadenamiento hacia adelante)
+        motor.run()
+
+        # 5. Obtener el diccionario de resultados
+        resultado = motor.obtener_resultado()
+
+        return resultado
+
+    except Exception as e:
+        # Manejo de errores
+        return {
+            'riesgo_final': 'ERROR',
+            'puntuacion': 0,
+            'recomendacion': 'Error en el motor de inferencia',
+            'explicaciones': [],
+            'alertas': [{'nivel': 'CRÍTICO', 'mensaje': f"Error interno del motor: {str(e)}"}],
+            'factores_criticos': ['Error de ejecución'],
+            'total_reglas_activadas': 0
+        }
