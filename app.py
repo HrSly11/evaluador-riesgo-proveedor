@@ -136,6 +136,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # ========== FUNCIONES AUXILIARES ==========
 def crear_gauge_puntuacion(puntuacion: float):
     fig = go.Figure(go.Indicator(
@@ -160,28 +161,47 @@ def crear_gauge_puntuacion(puntuacion: float):
 def formulario_proveedor():
     st.sidebar.header("📝 Datos del Proveedor")
 
+    # ====== Sección General ======
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("📌 Información General")
     datos = {}
     datos['nombre'] = st.sidebar.text_input("Nombre del Proveedor", "Proveedor XYZ S.A.")
-    datos['industria'] = st.sidebar.selectbox("Industria", ["manufactura", "servicios", "tecnología", "construcción", "logística"])
+    datos['industria'] = st.sidebar.selectbox(
+        "Industria",
+        [
+            "Manufactura", "Servicios", "Tecnología", "Construcción", "Logística",
+            "Agricultura", "Minería", "Salud", "Educación", "Retail", "Energía",
+            "Transporte", "Finanzas", "Turismo", "Textil"
+        ],
+        help="Selecciona el sector al que pertenece el proveedor."
+    )
     datos['tiempo_mercado'] = st.sidebar.number_input("Años en el mercado", 0.0, 100.0, 5.0, 0.5)
 
+    # ====== Sección Financiera ======
+    st.sidebar.markdown("---")
     st.sidebar.subheader("💰 Indicadores Financieros")
     datos['liquidez_corriente'] = st.sidebar.slider("Ratio de Liquidez Corriente", 0.0, 5.0, 1.5, 0.1)
     datos['endeudamiento'] = st.sidebar.slider("Nivel de Endeudamiento", 0.0, 1.0, 0.5, 0.05)
     datos['rentabilidad'] = st.sidebar.slider("Rentabilidad (%)", -50.0, 50.0, 10.0, 1.0) / 100
     datos['historial_pagos'] = st.sidebar.slider("Pagos Puntuales (%)", 0.0, 100.0, 85.0, 5.0)
 
+    # ====== Sección Operacional ======
+    st.sidebar.markdown("---")
     st.sidebar.subheader("⚙️ Indicadores Operacionales")
     datos['certificacion_calidad'] = st.sidebar.checkbox("Certificación de Calidad (ISO 9001)", True)
     datos['capacidad_produccion'] = st.sidebar.slider("Capacidad de Producción (%)", 0.0, 100.0, 75.0, 5.0)
     datos['tasa_defectos'] = st.sidebar.slider("Tasa de Defectos (%)", 0.0, 20.0, 3.0, 0.5)
     datos['cumplimiento_entregas'] = st.sidebar.slider("Cumplimiento de Entregas (%)", 0.0, 100.0, 90.0, 5.0)
 
+    # ====== Sección Legal ======
+    st.sidebar.markdown("---")
     st.sidebar.subheader("⚖️ Indicadores Legales")
     datos['cumplimiento_legal'] = st.sidebar.checkbox("Cumplimiento Legal Completo", True)
     datos['certificacion_ambiental'] = st.sidebar.checkbox("Certificación Ambiental (ISO 14001)", False)
     datos['seguros_vigentes'] = st.sidebar.checkbox("Seguros de Responsabilidad Vigentes", True)
 
+    # ====== Sección Reputacional ======
+    st.sidebar.markdown("---")
     st.sidebar.subheader("⭐ Indicadores Reputacionales")
     datos['calificacion_mercado'] = st.sidebar.slider("Calificación de Mercado", 1.0, 5.0, 4.0, 0.1)
     datos['quejas_clientes'] = st.sidebar.number_input("Quejas de Clientes (último año)", 0, 100, 3)
@@ -207,19 +227,14 @@ def mostrar_resultados(resultado, datos):
     with col3:
         st.markdown(f"<div class='result-card'><div class='result-title'>Reglas Activadas</div><div class='result-value'>{resultado['total_reglas_activadas']}</div></div>", unsafe_allow_html=True)
 
-    # Añadir espacio antes del gráfico
     st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-    
-    # ====== Gráfico tipo Gauge ======
     st.plotly_chart(crear_gauge_puntuacion(resultado['puntuacion']), use_container_width=True)
 
-    # ====== Recomendación final ======
     if resultado['riesgo_final'] in ['BAJO', 'MODERADO']:
         st.success(resultado['recomendacion'])
     else:
         st.warning(resultado['recomendacion'])
 
-    # ====== Lista de reglas activadas ======
     if resultado.get('explicaciones'):
         st.markdown("### ⚙️ Reglas Activadas y Explicaciones")
         for exp in resultado['explicaciones']:
@@ -233,17 +248,15 @@ def mostrar_resultados(resultado, datos):
     else:
         st.info("No se activaron reglas específicas para este proveedor.")
 
-    # ====== Generar y descargar informe (Markdown) ======
     informe_md = explicador.generar_informe_completo(resultado, datos)
     st.download_button(
-        label="⬇️ Descargar Informe Completo (Markdown .md)",
+        label="⬇️ Descargar informe...",
         data=informe_md,
         file_name=f"informe_{datos['nombre'].replace(' ', '_')}.md",
         mime="text/markdown",
         use_container_width=True
     )
 
-    # ====== Descargo de responsabilidad ======
     st.markdown("""
     <div class='disclaimer'>
         ⚠️ <b>Descargo de responsabilidad en base al análisis de resultados:</b><br>
@@ -253,8 +266,7 @@ def mostrar_resultados(resultado, datos):
     </div>
     """, unsafe_allow_html=True)
 
-    # ====== Botón para nueva evaluación ======
-    if st.button("🔁 Nueva Evaluación", use_container_width=True):
+    if st.button("🔁 Hacer una nueva evaluación...", use_container_width=True):
         st.session_state.clear()
         st.rerun()
 
@@ -280,7 +292,6 @@ def main():
         mostrar_resultados(st.session_state['resultado'], st.session_state['datos'])
 
     else:
-        # ====== PANTALLA INICIAL ======
         st.markdown("<h2 style='text-align:center;'>🏠 Bienvenido</h2>", unsafe_allow_html=True)
         st.markdown("""
         <p style='text-align:center; font-size:17px;'>
@@ -299,27 +310,23 @@ def main():
         with colD:
             st.markdown("<div class='category-card'><div class='category-icon'>🌐</div><div class='category-title'>Reputacional</div><div class='category-text'>Reputación, quejas y referencias</div></div>", unsafe_allow_html=True)
 
-        # Añadir espacio antes del bloque de instrucciones
         st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
         
         st.info("""
         **Instrucciones:**
         
-        1️⃣ 
-        Completa los datos del proveedor en el menú lateral.
+        1️⃣ Completa los datos del proveedor en el menú lateral.
           
-        2️⃣ 
-        Presiona **"🚀 Evaluar Proveedor"**.
+        2️⃣ Presiona **"🚀 Evaluar Proveedor"**.
           
-        3️⃣ 
-        Visualiza el resultado y descarga el informe generado.
+        3️⃣ Visualiza el resultado y descarga el informe generado.
         """)
 
         st.markdown("""
         <div style='text-align:center; margin-top:30px'>
             <h4>👩‍💻 Desarrollado por el <b>Grupo N°2 - Escuela de Ingeniería de Sistemas</b></h4>
             <p>
-            Chávez Alva Tania Ycela · Cruz Esquivel Luis Josmell · Cruz Vargas Germain Alexander · Rodríguez Sandoval Harry Sly · Villa Valdiviezo Favián Enrique
+            Chávez Alva Tania Ycela -- Cruz Esquivel Luis Josmell -- Cruz Vargas Germain Alexander -- Rodríguez Sandoval Harry Sly -- Villa Valdiviezo Favián Enrique
             </p>
         </div>
         """, unsafe_allow_html=True)
