@@ -1,6 +1,4 @@
-"""
-Estilos CSS para la aplicación de evaluación de riesgo de proveedores
-"""
+# Estilos CSS para la aplicación de evaluación de riesgo de proveedores
 
 def get_custom_css():
     """Retorna los estilos CSS personalizados de la aplicación"""
