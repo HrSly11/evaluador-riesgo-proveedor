@@ -65,7 +65,7 @@ def test_explicacion_contiene_trazabilidad():
 
 def test_explicacion_justifica_decision():
     """
-    Test 2: Verificar que el sistema explique decisiones - VERSIÓN CORREGIDA
+    Test 2: Verificar que el sistema explique decisiones 
     """
     # Caso: Proveedor con problemas LEGALES (que SÍ funcionan)
     datos_riesgo_legal = {

@@ -1,23 +1,9 @@
-import streamlit as st
-import fix_collections  # ← AÑADE ESTA LÍNEA AQUÍ (ANTES de los demás imports)
-
-# Ahora sí puedes importar engine
 from engine import MotorEvaluacionRiesgo, DatosProveedor, ExplicadorDecisiones
-
-# ... resto de tu código
-"""
-Sistema Experto de Evaluación de Riesgo de Proveedores
-Aplicación principal con interfaz Streamlit
-"""
-
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
 from datetime import datetime
-from engine import MotorEvaluacionRiesgo, DatosProveedor, ExplicadorDecisiones
+import streamlit as st
+import plotly.graph_objects as go
 
-# Configuración de la página
+# ========== CONFIGURACIÓN DE PÁGINA ==========
 st.set_page_config(
     page_title="Evaluador de Riesgo de Proveedores",
     page_icon="📊",
@@ -25,521 +11,318 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS personalizados
+# ========== ESTILOS CSS PERSONALIZADOS ==========
 st.markdown("""
 <style>
     .main-header {
         font-size: 3rem;
         font-weight: bold;
         text-align: center;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
     }
-    
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1.5rem;
-        border-radius: 10px;
-        color: white;
+
+    .banner {
         text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    
-    .alert-critico {
-        background-color: #fee;
-        border-left: 5px solid #f44336;
+        background: linear-gradient(90deg, #4e54c8, #8f94fb);
+        color: white;
         padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 5px;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    
-    .alert-alto {
-        background-color: #fff3e0;
-        border-left: 5px solid #ff9800;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 5px;
-    }
-    
-    .alert-medio {
-        background-color: #fff9c4;
-        border-left: 5px solid #ffc107;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 5px;
-    }
-    
+
     .disclaimer {
         background-color: #e3f2fd;
         border: 2px solid #2196f3;
         border-radius: 10px;
         padding: 1.5rem;
         margin: 2rem 0;
+        color: #000000;
+    }
+    .disclaimer b {
+        color: #1565c0;
+    }
+
+    /* === Cuadros de resultados uniformes === */
+    .result-card {
+        background: #ffffff;
+        border: 2px solid #4e54c8;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        color: #333333;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .result-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+        color: #4e54c8;
+    }
+    .result-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #000;
+    }
+
+    /* === Tarjetas de categorías (inicio) === */
+    .category-card {
+        background: white;
+        border: 2px solid #4e54c8;
+        border-radius: 12px;
+        padding: 1.2rem;
+        text-align: center;
+        height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease-in-out;
+    }
+    .category-card:hover {
+        transform: scale(1.03);
+        background: #f8f9ff;
+    }
+    .category-icon {
+        font-size: 32px;
+        margin-bottom: 0.5rem;
+    }
+    .category-title {
+        font-weight: bold;
+        font-size: 17px;
+        margin-bottom: 8px;
+        color: #4e54c8;
+    }
+    .category-text {
+        font-size: 14px;
+        color: #333;
+        line-height: 1.4;
+    }
+
+    /* === Reglas activadas === */
+    .rule-box {
+        background-color: #f9f9f9;
+        border-left: 5px solid #4e54c8;
+        padding: 0.7rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+        color: #000000;
+    }
+    .rule-box b {
+        color: #222;
+    }
+    .rule-box i {
+        color: #333;
     }
     
-    .success-box {
-        background-color: #e8f5e9;
-        border-left: 5px solid #4caf50;
-        padding: 1rem;
-        border-radius: 5px;
-        margin: 1rem 0;
+    /* === Espaciado del bloque de instrucciones === */
+    .stMarkdown > div:has(.instructions-block) {
+        margin-top: 2.5rem !important;
     }
+    
+    /* === Espaciado para botones y elementos === */
+    .stDownloadButton {
+        margin-top: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
-
+# ========== FUNCIONES AUXILIARES ==========
 def crear_gauge_puntuacion(puntuacion: float):
-    """Crea un gráfico de gauge para la puntuación"""
     fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
+        mode="gauge+number",
         value=puntuacion,
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': "Puntuación de Riesgo", 'font': {'size': 24}},
-        delta={'reference': 80, 'increasing': {'color': "green"}},
+        title={'text': "Puntuación de Riesgo", 'font': {'size': 22}},
         gauge={
-            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-            'bar': {'color': "darkblue"},
-            'bgcolor': "white",
-            'borderwidth': 2,
-            'bordercolor': "gray",
+            'axis': {'range': [None, 100]},
+            'bar': {'color': "#4e54c8"},
             'steps': [
                 {'range': [0, 50], 'color': '#ffcdd2'},
                 {'range': [50, 70], 'color': '#fff9c4'},
                 {'range': [70, 100], 'color': '#c8e6c9'}
-            ],
-            'threshold': {
-                'line': {'color': "red", 'width': 4},
-                'thickness': 0.75,
-                'value': 60
-            }
+            ]
         }
     ))
-    
-    fig.update_layout(
-        height=300,
-        margin=dict(l=20, r=20, t=60, b=20)
-    )
-    
+    fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
     return fig
 
 
-def crear_grafico_categorias(metricas: dict):
-    """Crea gráfico de barras de impacto por categoría"""
-    categorias = metricas['categorias']
-    
-    df = pd.DataFrame({
-        'Categoría': list(categorias.keys()),
-        'Impacto': list(categorias.values())
-    })
-    
-    fig = px.bar(
-        df,
-        x='Categoría',
-        y='Impacto',
-        title='Impacto en Puntuación por Categoría de Riesgo',
-        color='Impacto',
-        color_continuous_scale=['green', 'yellow', 'red']
-    )
-    
-    fig.update_layout(
-        height=400,
-        showlegend=False
-    )
-    
-    return fig
-
-
-def crear_grafico_alertas(metricas: dict):
-    """Crea gráfico de dona de alertas por nivel"""
-    alertas = metricas['alertas_por_nivel']
-    
-    labels = list(alertas.keys())
-    values = list(alertas.values())
-    colors = ['#f44336', '#ff9800', '#ffc107']
-    
-    fig = go.Figure(data=[go.Pie(
-        labels=labels,
-        values=values,
-        hole=.3,
-        marker_colors=colors
-    )])
-    
-    fig.update_layout(
-        title='Distribución de Alertas por Nivel',
-        height=400
-    )
-    
-    return fig
-
-
-def mostrar_header():
-    """Muestra el encabezado de la aplicación"""
-    st.markdown('<h1 class="main-header">📊 Sistema Experto de Evaluación de Riesgo</h1>', 
-                unsafe_allow_html=True)
-    st.markdown("### Evaluación Integral de Proveedores")
-    
-    st.markdown("""
-    <div class="disclaimer">
-        <h4>⚠️ AVISO IMPORTANTE</h4>
-        <p><strong>Esta herramienta es un sistema de asistencia a la decisión.</strong></p>
-        <p>La evaluación final y la decisión de contratación DEBE ser realizada por:</p>
-        <ul>
-            <li>Personal calificado del área de compras</li>
-            <li>Gerentes de cadena de suministro</li>
-            <li>Comité de evaluación de proveedores</li>
-        </ul>
-        <p><em>Este sistema NO reemplaza el criterio profesional humano ni la due diligence completa.</em></p>
-    </div>
-    """, unsafe_allow_html=True)
-
-
+# ========== FORMULARIO DE PROVEEDOR ==========
 def formulario_proveedor():
-    """Muestra el formulario para ingresar datos del proveedor"""
     st.sidebar.header("📝 Datos del Proveedor")
-    
+
     datos = {}
-    
-    # Información general
-    st.sidebar.subheader("Información General")
     datos['nombre'] = st.sidebar.text_input("Nombre del Proveedor", "Proveedor XYZ S.A.")
-    datos['industria'] = st.sidebar.selectbox(
-        "Industria",
-        ["manufactura", "servicios", "tecnología", "construcción", "logística"]
-    )
-    datos['tiempo_mercado'] = st.sidebar.number_input(
-        "Años en el mercado",
-        min_value=0.0,
-        max_value=100.0,
-        value=5.0,
-        step=0.5
-    )
-    
-    # Indicadores Financieros
+    datos['industria'] = st.sidebar.selectbox("Industria", ["manufactura", "servicios", "tecnología", "construcción", "logística"])
+    datos['tiempo_mercado'] = st.sidebar.number_input("Años en el mercado", 0.0, 100.0, 5.0, 0.5)
+
     st.sidebar.subheader("💰 Indicadores Financieros")
-    datos['liquidez_corriente'] = st.sidebar.slider(
-        "Ratio de Liquidez Corriente",
-        min_value=0.0,
-        max_value=5.0,
-        value=1.5,
-        step=0.1,
-        help="Activos corrientes / Pasivos corrientes"
-    )
-    
-    datos['endeudamiento'] = st.sidebar.slider(
-        "Nivel de Endeudamiento",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.5,
-        step=0.05,
-        help="Pasivo total / Activo total"
-    )
-    
-    datos['rentabilidad'] = st.sidebar.slider(
-        "Rentabilidad (%)",
-        min_value=-50.0,
-        max_value=50.0,
-        value=10.0,
-        step=1.0,
-        help="ROE o margen neto"
-    ) / 100
-    
-    datos['historial_pagos'] = st.sidebar.slider(
-        "Pagos Puntuales (%)",
-        min_value=0.0,
-        max_value=100.0,
-        value=85.0,
-        step=5.0,
-        help="Porcentaje de pagos realizados a tiempo"
-    )
-    
-    # Indicadores Operacionales
+    datos['liquidez_corriente'] = st.sidebar.slider("Ratio de Liquidez Corriente", 0.0, 5.0, 1.5, 0.1)
+    datos['endeudamiento'] = st.sidebar.slider("Nivel de Endeudamiento", 0.0, 1.0, 0.5, 0.05)
+    datos['rentabilidad'] = st.sidebar.slider("Rentabilidad (%)", -50.0, 50.0, 10.0, 1.0) / 100
+    datos['historial_pagos'] = st.sidebar.slider("Pagos Puntuales (%)", 0.0, 100.0, 85.0, 5.0)
+
     st.sidebar.subheader("⚙️ Indicadores Operacionales")
-    datos['certificacion_calidad'] = st.sidebar.checkbox(
-        "Certificación de Calidad (ISO 9001)",
-        value=True
-    )
-    
-    datos['capacidad_produccion'] = st.sidebar.slider(
-        "Capacidad de Producción (%)",
-        min_value=0.0,
-        max_value=100.0,
-        value=75.0,
-        step=5.0,
-        help="Porcentaje de capacidad instalada utilizable"
-    )
-    
-    datos['tasa_defectos'] = st.sidebar.slider(
-        "Tasa de Defectos (%)",
-        min_value=0.0,
-        max_value=20.0,
-        value=3.0,
-        step=0.5
-    )
-    
-    datos['cumplimiento_entregas'] = st.sidebar.slider(
-        "Cumplimiento de Entregas (%)",
-        min_value=0.0,
-        max_value=100.0,
-        value=90.0,
-        step=5.0
-    )
-    
-    # Indicadores Legales
+    datos['certificacion_calidad'] = st.sidebar.checkbox("Certificación de Calidad (ISO 9001)", True)
+    datos['capacidad_produccion'] = st.sidebar.slider("Capacidad de Producción (%)", 0.0, 100.0, 75.0, 5.0)
+    datos['tasa_defectos'] = st.sidebar.slider("Tasa de Defectos (%)", 0.0, 20.0, 3.0, 0.5)
+    datos['cumplimiento_entregas'] = st.sidebar.slider("Cumplimiento de Entregas (%)", 0.0, 100.0, 90.0, 5.0)
+
     st.sidebar.subheader("⚖️ Indicadores Legales")
-    datos['cumplimiento_legal'] = st.sidebar.checkbox(
-        "Cumplimiento Legal Completo",
-        value=True,
-        help="Sin antecedentes de incumplimiento normativo"
-    )
-    
-    datos['certificacion_ambiental'] = st.sidebar.checkbox(
-        "Certificación Ambiental (ISO 14001)",
-        value=False
-    )
-    
-    datos['seguros_vigentes'] = st.sidebar.checkbox(
-        "Seguros de Responsabilidad Vigentes",
-        value=True
-    )
-    
-    # Indicadores Reputacionales
+    datos['cumplimiento_legal'] = st.sidebar.checkbox("Cumplimiento Legal Completo", True)
+    datos['certificacion_ambiental'] = st.sidebar.checkbox("Certificación Ambiental (ISO 14001)", False)
+    datos['seguros_vigentes'] = st.sidebar.checkbox("Seguros de Responsabilidad Vigentes", True)
+
     st.sidebar.subheader("⭐ Indicadores Reputacionales")
-    datos['calificacion_mercado'] = st.sidebar.slider(
-        "Calificación de Mercado",
-        min_value=1.0,
-        max_value=5.0,
-        value=4.0,
-        step=0.1,
-        help="Calificación promedio de clientes"
-    )
-    
-    datos['quejas_clientes'] = st.sidebar.number_input(
-        "Quejas de Clientes (último año)",
-        min_value=0,
-        max_value=100,
-        value=3,
-        step=1
-    )
-    
-    datos['referencias_positivas'] = st.sidebar.number_input(
-        "Referencias Positivas Verificadas",
-        min_value=0,
-        max_value=20,
-        value=5,
-        step=1
-    )
-    
+    datos['calificacion_mercado'] = st.sidebar.slider("Calificación de Mercado", 1.0, 5.0, 4.0, 0.1)
+    datos['quejas_clientes'] = st.sidebar.number_input("Quejas de Clientes (último año)", 0, 100, 3)
+    datos['referencias_positivas'] = st.sidebar.number_input("Referencias Positivas Verificadas", 0, 20, 5)
+
     datos['fecha_evaluacion'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     return datos
 
 
-def ejecutar_evaluacion(datos: dict):
-    """Ejecuta la evaluación del proveedor"""
-    # Crear motor de inferencia
-    motor = MotorEvaluacionRiesgo()
-    motor.reset()
-    
-    # Declarar hechos
-    motor.declare(DatosProveedor(**{k: v for k, v in datos.items() 
-                                    if k not in ['nombre', 'fecha_evaluacion']}))
-    
-    # Ejecutar motor
-    with st.spinner('🔄 Evaluando proveedor...'):
-        motor.run()
-    
-    # Obtener resultados
-    resultado = motor.obtener_resultado()
-    
-    return resultado
-
-
-def mostrar_resultados(resultado: dict, datos: dict):
-    """Muestra los resultados de la evaluación"""
+# ========== MOSTRAR RESULTADOS ==========
+def mostrar_resultados(resultado, datos):
     explicador = ExplicadorDecisiones()
-    
-    # Resumen Ejecutivo
-    st.markdown("## 📈 Resumen Ejecutivo")
-    
+    st.markdown("## 📈 Resultados de la Evaluación")
+
     col1, col2, col3 = st.columns(3)
-    
+    color = {'BAJO': 'green', 'MODERADO': 'orange', 'ALTO': 'red', 'CRÍTICO': '#b71c1c'}.get(resultado['riesgo_final'], 'gray')
+
     with col1:
-        riesgo = resultado['riesgo_final']
-        color_riesgo = {
-            'BAJO': 'green',
-            'MEDIO': 'orange',
-            'ALTO': 'red'
-        }
-        st.markdown(f"""
-        <div style="background-color: {color_riesgo.get(riesgo, 'gray')}; 
-                    padding: 2rem; border-radius: 10px; text-align: center;">
-            <h2 style="color: white; margin: 0;">Riesgo {riesgo}</h2>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f"<div class='result-card'><div class='result-title'>Nivel de Riesgo</div><div class='result-value' style='color:{color};'>{resultado['riesgo_final']}</div></div>", unsafe_allow_html=True)
     with col2:
-        st.metric(
-            label="Puntuación Final",
-            value=f"{resultado['puntuacion']:.0f}/100",
-            delta=f"{resultado['puntuacion'] - 60:.0f} vs mínimo aceptable"
-        )
-    
+        st.markdown(f"<div class='result-card'><div class='result-title'>Puntuación</div><div class='result-value'>{resultado['puntuacion']:.0f}/100</div></div>", unsafe_allow_html=True)
     with col3:
-        st.metric(
-            label="Reglas Activadas",
-            value=resultado['total_reglas_activadas'],
-            delta=f"{len(resultado['factores_criticos'])} críticos"
-        )
+        st.markdown(f"<div class='result-card'><div class='result-title'>Reglas Activadas</div><div class='result-value'>{resultado['total_reglas_activadas']}</div></div>", unsafe_allow_html=True)
+
+    # Añadir espacio antes del gráfico
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
     
-    # Gráfico de puntuación
-    st.plotly_chart(crear_gauge_puntuacion(resultado['puntuacion']), 
-                    use_container_width=True)
-    
-    # Recomendación
-    st.markdown("## 💡 Recomendación")
-    if resultado['riesgo_final'] == 'BAJO':
-        st.markdown(f'<div class="success-box"><h3>✅ {resultado["recomendacion"]}</h3></div>', 
-                   unsafe_allow_html=True)
+    # ====== Gráfico tipo Gauge ======
+    st.plotly_chart(crear_gauge_puntuacion(resultado['puntuacion']), use_container_width=True)
+
+    # ====== Recomendación final ======
+    if resultado['riesgo_final'] in ['BAJO', 'MODERADO']:
+        st.success(resultado['recomendacion'])
     else:
-        st.warning(f"**{resultado['recomendacion']}**")
-    
-    # Alertas
-    if resultado['alertas']:
-        st.markdown("## 🚨 Alertas Identificadas")
-        for alerta in resultado['alertas']:
-            nivel = alerta['nivel']
-            clase = f"alert-{nivel.lower()}"
+        st.warning(resultado['recomendacion'])
+
+    # ====== Lista de reglas activadas ======
+    if resultado.get('explicaciones'):
+        st.markdown("### ⚙️ Reglas Activadas y Explicaciones")
+        for exp in resultado['explicaciones']:
             st.markdown(f"""
-            <div class="{clase}">
-                <strong>{nivel}:</strong> {alerta['mensaje']}
+            <div class='rule-box'>
+                <b>{exp['regla']}</b><br>
+                <i>{exp['razonamiento']}</i><br>
+                <span style='color:#555;'>Impacto: {exp['impacto']}</span>
             </div>
             """, unsafe_allow_html=True)
-    
-    # Visualizaciones
-    st.markdown("## 📊 Análisis Detallado")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        metricas = explicador.generar_metricas_visuales(resultado)
-        st.plotly_chart(crear_grafico_categorias(metricas), 
-                       use_container_width=True)
-    
-    with col2:
-        if resultado['alertas']:
-            st.plotly_chart(crear_grafico_alertas(metricas), 
-                           use_container_width=True)
-    
-    # Trazabilidad - Reglas Activadas
-    st.markdown("## 🔍 Trazabilidad: Reglas Activadas")
+    else:
+        st.info("No se activaron reglas específicas para este proveedor.")
+
+    # ====== Generar y descargar informe (Markdown) ======
+    informe_md = explicador.generar_informe_completo(resultado, datos)
+    st.download_button(
+        label="⬇️ Descargar Informe Completo (Markdown .md)",
+        data=informe_md,
+        file_name=f"informe_{datos['nombre'].replace(' ', '_')}.md",
+        mime="text/markdown",
+        use_container_width=True
+    )
+
+    # ====== Descargo de responsabilidad ======
     st.markdown("""
-    Esta sección muestra **exactamente cómo el sistema llegó a su conclusión**, 
-    detallando cada regla que se activó durante la evaluación.
-    """)
-    
-    if resultado['explicaciones']:
-        df_explicaciones = explicador.generar_explicacion_detallada(resultado['explicaciones'])
-        st.dataframe(
-            df_explicaciones,
-            use_container_width=True,
-            hide_index=True
-        )
-        
-        # Cadena de razonamiento
-        with st.expander("📖 Ver Cadena de Razonamiento Completa"):
-            st.markdown(explicador.generar_cadena_razonamiento(resultado['explicaciones']))
-    else:
-        st.success("✅ No se identificaron problemas críticos. Todas las métricas están dentro de rangos aceptables.")
-    
-    # Plan de Mitigación
-    st.markdown("## 🔧 Plan de Mitigación")
-    st.markdown(explicador.generar_plan_mitigacion(resultado))
-    
-    # Informe Completo
-    with st.expander("📄 Descargar Informe Completo"):
-        informe = explicador.generar_informe_completo(resultado, datos)
-        st.download_button(
-            label="⬇️ Descargar Informe (Markdown)",
-            data=informe,
-            file_name=f"informe_riesgo_{datos['nombre'].replace(' ', '_')}_{datos['fecha_evaluacion'][:10]}.md",
-            mime="text/markdown"
-        )
+    <div class='disclaimer'>
+        ⚠️ <b>Descargo de responsabilidad en base al análisis de resultados:</b><br>
+        Este sistema experto realiza una evaluación automatizada basada en reglas predefinidas y datos ingresados por el usuario.
+        Los resultados, puntuaciones y recomendaciones deben interpretarse como un apoyo a la toma de decisiones,
+        no como un dictamen financiero o legal definitivo. Se recomienda validar los resultados con un análisis profesional adicional.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ====== Botón para nueva evaluación ======
+    if st.button("🔁 Nueva Evaluación", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
 
 
+# ========== MAIN APP ==========
 def main():
-    """Función principal de la aplicación"""
-    mostrar_header()
-    
-    # Formulario en sidebar
-    datos_proveedor = formulario_proveedor()
-    
-    # Botón de evaluación
+    st.markdown('<div class="banner"><h1>Sistema Experto de Evaluación de Riesgo de Proveedores</h1></div>', unsafe_allow_html=True)
+
+    datos = formulario_proveedor()
+
     if st.sidebar.button("🚀 Evaluar Proveedor", type="primary", use_container_width=True):
-        # Ejecutar evaluación
-        resultado = ejecutar_evaluacion(datos_proveedor)
-        
-        # Guardar en sesión
-        st.session_state['ultimo_resultado'] = resultado
-        st.session_state['ultimos_datos'] = datos_proveedor
-        
-        # Mostrar resultados
-        mostrar_resultados(resultado, datos_proveedor)
-    
-    # Si hay resultados previos, mostrarlos
-    elif 'ultimo_resultado' in st.session_state:
-        mostrar_resultados(
-            st.session_state['ultimo_resultado'],
-            st.session_state['ultimos_datos']
-        )
+        motor = MotorEvaluacionRiesgo()
+        motor.reset()
+        motor.declare(DatosProveedor(**{k: v for k, v in datos.items() if k not in ['nombre', 'fecha_evaluacion']}))
+        with st.spinner("Evaluando proveedor..."):
+            motor.run()
+        resultado = motor.obtener_resultado()
+        st.session_state['resultado'] = resultado
+        st.session_state['datos'] = datos
+        mostrar_resultados(resultado, datos)
+
+    elif 'resultado' in st.session_state:
+        mostrar_resultados(st.session_state['resultado'], st.session_state['datos'])
+
     else:
-        # Página de inicio
-        st.info("👈 Complete el formulario en la barra lateral y presione **'Evaluar Proveedor'** para comenzar.")
-        
+        # ====== PANTALLA INICIAL ======
+        st.markdown("<h2 style='text-align:center;'>🏠 Bienvenido</h2>", unsafe_allow_html=True)
         st.markdown("""
-        ### 🎯 Características del Sistema
+        <p style='text-align:center; font-size:17px;'>
+        Este sistema experto analiza proveedores en 4 dimensiones: <b>Financiera</b>, <b>Operacional</b>, <b>Legal</b> y <b>Reputacional</b>.
+        Utiliza un motor de inferencia basado en reglas y proporciona trazabilidad completa de las decisiones.
+        </p>
+        """, unsafe_allow_html=True)
+
+        colA, colB, colC, colD = st.columns(4)
+        with colA:
+            st.markdown("<div class='category-card'><div class='category-icon'>💰</div><div class='category-title'>Financiero</div><div class='category-text'>Liquidez, endeudamiento y rentabilidad</div></div>", unsafe_allow_html=True)
+        with colB:
+            st.markdown("<div class='category-card'><div class='category-icon'>⚙️</div><div class='category-title'>Operacional</div><div class='category-text'>Capacidad, entregas y calidad</div></div>", unsafe_allow_html=True)
+        with colC:
+            st.markdown("<div class='category-card'><div class='category-icon'>⚖️</div><div class='category-title'>Legal</div><div class='category-text'>Cumplimiento normativo y seguros</div></div>", unsafe_allow_html=True)
+        with colD:
+            st.markdown("<div class='category-card'><div class='category-icon'>🌐</div><div class='category-title'>Reputacional</div><div class='category-text'>Reputación, quejas y referencias</div></div>", unsafe_allow_html=True)
+
+        # Añadir espacio antes del bloque de instrucciones
+        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
         
-        Este sistema experto evalúa proveedores en **4 dimensiones clave**:
+        st.info("""
+        **Instrucciones:**
         
-        1. **💰 Riesgo Financiero**
-           - Liquidez corriente
-           - Nivel de endeudamiento
-           - Rentabilidad
-           - Historial de pagos
-        
-        2. **⚙️ Riesgo Operacional**
-           - Certificaciones de calidad
-           - Capacidad de producción
-           - Tasa de defectos
-           - Cumplimiento de entregas
-        
-        3. **⚖️ Riesgo Legal**
-           - Cumplimiento normativo
-           - Certificaciones ambientales
-           - Seguros vigentes
-        
-        4. **⭐ Riesgo Reputacional**
-           - Calificación de mercado
-           - Quejas de clientes
-           - Referencias positivas
-        
-        ### 🔬 Metodología
-        
-        El sistema utiliza **encadenamiento hacia adelante** con reglas expertas que:
-        - Evalúan cada indicador según umbrales establecidos
-        - Identifican factores de riesgo críticos
-        - Calculan una puntuación ponderada
-        - Generan recomendaciones accionables
-        - Proporcionan trazabilidad completa de la decisión
-        
-        ### ✅ Ventajas
-        
-        - **Transparencia total**: Cada decisión es explicable
-        - **Consistencia**: Mismos criterios para todos los proveedores
-        - **Rapidez**: Evaluación en segundos
-        - **Trazabilidad**: Auditable y documentable
+        1️⃣ 
+        Completa los datos del proveedor en el menú lateral.
+          
+        2️⃣ 
+        Presiona **"🚀 Evaluar Proveedor"**.
+          
+        3️⃣ 
+        Visualiza el resultado y descarga el informe generado.
         """)
+
+        st.markdown("""
+        <div style='text-align:center; margin-top:30px'>
+            <h4>👩‍💻 Desarrollado por el <b>Grupo N°2 - Escuela de Ingeniería de Sistemas</b></h4>
+            <p>
+            Chávez Alva Tania Ycela · Cruz Esquivel Luis Josmell · Cruz Vargas Germain Alexander · Rodríguez Sandoval Harry Sly · Villa Valdiviezo Favián Enrique
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
