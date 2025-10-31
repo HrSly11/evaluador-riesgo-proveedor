@@ -1,83 +1,74 @@
 """
-Sistema Experto para Evaluación de Riesgo de Proveedores
-Aplicación Streamlit - Archivo Principal
-
+Sistema Experto de Evaluación de Riesgo de Proveedores
+Aplicación principal usando Streamlit
 """
-
+from engine import MotorEvaluacionRiesgo, DatosProveedor
 import streamlit as st
 
-# Importar configuración y estilos
-from ui.styles import aplicar_configuracion_pagina, aplicar_estilos
+# Importar componentes de la carpeta ui
+from ui.styles import get_custom_css
+from ui.components import crear_banner
+from ui.formulario import formulario_proveedor
+from ui.inicio import mostrar_inicio
+from ui.resultados import mostrar_resultados
 
-# Importar componentes de UI
-from ui import (
-    formulario_proveedor,
-    mostrar_resultados,
-    mostrar_pantalla_inicio,
-    crear_banner
+
+# ========== CONFIGURACIÓN DE PÁGINA ==========
+st.set_page_config(
+    page_title="Evaluador de Riesgo de Proveedores",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Importar motor de inferencia
-from engine import MotorEvaluacionRiesgo, DatosProveedor
+# ========== APLICAR ESTILOS CSS ==========
+st.markdown(get_custom_css(), unsafe_allow_html=True)
 
 
-# ========================================
-# CONFIGURACIÓN INICIAL
-# ========================================
-
-# IMPORTANTE: Esta debe ser la PRIMERA llamada de Streamlit
-aplicar_configuracion_pagina()
-
-# Aplicar estilos CSS personalizados
-aplicar_estilos()
-
-
-# ========================================
-# FUNCIONES AUXILIARES
-# ========================================
-
-def _ejecutar_evaluacion(datos: dict) -> dict:
-    """Ejecuta la evaluación usando el motor de reglas"""
-    
-    motor = MotorEvaluacionRiesgo()
-    motor.reset()
-
-    # No mandar campos visuales al motor
-    datos_motor = {k: v for k, v in datos.items() if k not in ['nombre', 'fecha_evaluacion']}
-
-    motor.declare(DatosProveedor(**datos_motor))
-
-    with st.spinner("🔄 Analizando proveedor... Por favor espera."):
-        motor.run()
-
-    return motor.obtener_resultado()
-
-
-# ========================================
-# FUNCIÓN PRINCIPAL
-# ========================================
-
+# ========== FUNCIÓN PRINCIPAL ==========
 def main():
-    crear_banner("Sistema Experto de Evaluación de Riesgo de Proveedores")
+    """Función principal de la aplicación"""
+    
+    # Mostrar banner
+    st.markdown(crear_banner(), unsafe_allow_html=True)
 
+    # Mostrar formulario en el sidebar
     datos = formulario_proveedor()
 
+    # Botón de evaluación en el sidebar
     if st.sidebar.button("🚀 Evaluar Proveedor", type="primary", use_container_width=True):
-        resultado = _ejecutar_evaluacion(datos)
+        # Crear motor de evaluación
+        motor = MotorEvaluacionRiesgo()
+        motor.reset()
+        
+        # Filtrar datos para el motor (excluir nombre y fecha_evaluacion)
+        datos_motor = {
+            k: v for k, v in datos.items() 
+            if k not in ['nombre', 'fecha_evaluacion']
+        }
+        
+        # Declarar hechos y ejecutar motor
+        motor.declare(DatosProveedor(**datos_motor))
+        
+        with st.spinner("Evaluando proveedor..."):
+            motor.run()
+        
+        # Obtener y guardar resultados en session_state
+        resultado = motor.obtener_resultado()
         st.session_state['resultado'] = resultado
         st.session_state['datos'] = datos
+        
+        # Mostrar resultados
         mostrar_resultados(resultado, datos)
 
-    elif 'resultado' in st.session_state and 'datos' in st.session_state:
+    # Si ya hay resultados en session_state, mostrarlos
+    elif 'resultado' in st.session_state:
         mostrar_resultados(st.session_state['resultado'], st.session_state['datos'])
 
+    # Si no hay resultados, mostrar página de inicio
     else:
-        mostrar_pantalla_inicio()
+        mostrar_inicio()
 
-
-# ========================================
-# PUNTO DE ENTRADA
-# ========================================
 
 if __name__ == "__main__":
     main()

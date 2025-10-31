@@ -1,32 +1,31 @@
 """
-Paquete UI - Componentes de Interfaz Streamlit
-Separación de componentes visuales según arquitectura solicitada
+Paquete UI para el Sistema Experto de Evaluación de Riesgo de Proveedores
 """
 
-from .styles import aplicar_estilos
+from .styles import get_custom_css
 from .components import (
     crear_gauge_puntuacion,
-    crear_card_resultado,
-    crear_card_categoria,
-    crear_rule_box,
     crear_banner,
-    crear_disclaimer
+    crear_tarjeta_categoria,
+    crear_tarjeta_resultado,
+    crear_caja_regla,
+    crear_disclaimer,
+    crear_footer
 )
 from .formulario import formulario_proveedor
+from .inicio import mostrar_inicio
 from .resultados import mostrar_resultados
-from .inicio import mostrar_pantalla_inicio
 
 __all__ = [
-    'aplicar_estilos',
+    'get_custom_css',
     'crear_gauge_puntuacion',
-    'crear_card_resultado',
-    'crear_card_categoria',
-    'crear_rule_box',
     'crear_banner',
+    'crear_tarjeta_categoria',
+    'crear_tarjeta_resultado',
+    'crear_caja_regla',
     'crear_disclaimer',
+    'crear_footer',
     'formulario_proveedor',
-    'mostrar_resultados',
-    'mostrar_pantalla_inicio'
+    'mostrar_inicio',
+    'mostrar_resultados'
 ]
-
-__version__ = '1.0.0'

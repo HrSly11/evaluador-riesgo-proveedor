@@ -1,244 +1,163 @@
 """
-Módulo de Formulario
-Componente del sidebar para captura de datos del proveedor
+Formulario de entrada de datos del proveedor
 """
-
 import streamlit as st
 from datetime import datetime
-from typing import Dict, Any
 
 
-def formulario_proveedor() -> Dict[str, Any]:
+def formulario_proveedor():
     """
-    Crea el formulario en el sidebar para ingresar datos del proveedor
+    Renderiza el formulario del sidebar para ingresar datos del proveedor
     
     Returns:
-        Diccionario con todos los datos ingresados
+        dict: Diccionario con todos los datos ingresados del proveedor
     """
     st.sidebar.header("📝 Datos del Proveedor")
-    
+
     datos = {}
+
+    # ====== Sección General ======
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("📌 Información General")
     
-    # ========== INFORMACIÓN GENERAL ==========
-    st.sidebar.markdown("### 📋 Información General")
     datos['nombre'] = st.sidebar.text_input(
-        "Nombre del Proveedor",
-        "Proveedor XYZ S.A.",
-        help="Razón social o nombre comercial del proveedor"
+        "Nombre del Proveedor", 
+        "Proveedor XYZ S.A."
     )
     
     datos['industria'] = st.sidebar.selectbox(
         "Industria",
-        ["manufactura", "servicios", "tecnología", "construcción", "logística"],
-        help="Sector industrial al que pertenece el proveedor"
+        [
+            "Manufactura", "Servicios", "Tecnología", "Construcción", "Logística",
+            "Agricultura", "Minería", "Salud", "Educación", "Retail", "Energía",
+            "Transporte", "Finanzas", "Turismo", "Textil"
+        ],
+        help="Selecciona el sector al que pertenece el proveedor."
     )
     
     datos['tiempo_mercado'] = st.sidebar.number_input(
-        "Años en el mercado",
-        min_value=0.0,
-        max_value=100.0,
-        value=5.0,
-        step=0.5,
-        help="Experiencia del proveedor en el mercado"
+        "Años en el mercado", 
+        0.0, 
+        100.0, 
+        5.0, 
+        0.5
     )
-    
+
+    # ====== Sección Financiera ======
     st.sidebar.markdown("---")
-    
-    # ========== INDICADORES FINANCIEROS ==========
-    st.sidebar.markdown("### 💰 Indicadores Financieros")
+    st.sidebar.subheader("💰 Indicadores Financieros")
     
     datos['liquidez_corriente'] = st.sidebar.slider(
-        "Ratio de Liquidez Corriente",
-        min_value=0.0,
-        max_value=5.0,
-        value=1.5,
-        step=0.1,
-        help="Activo Corriente / Pasivo Corriente. Ideal: ≥ 2.0"
+        "Ratio de Liquidez Corriente", 
+        0.0, 
+        5.0, 
+        1.5, 
+        0.1
     )
     
     datos['endeudamiento'] = st.sidebar.slider(
-        "Nivel de Endeudamiento",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.5,
-        step=0.05,
-        help="Pasivo Total / Activo Total. Ideal: < 0.4"
+        "Nivel de Endeudamiento", 
+        0.0, 
+        1.0, 
+        0.5, 
+        0.05
     )
     
     datos['rentabilidad'] = st.sidebar.slider(
-        "Rentabilidad (%)",
-        min_value=-50.0,
-        max_value=50.0,
-        value=10.0,
-        step=1.0,
-        help="Margen de utilidad neta. Ideal: ≥ 15%"
-    ) / 100  # Convertir a decimal
+        "Rentabilidad (%)", 
+        -50.0, 
+        50.0, 
+        10.0, 
+        1.0
+    ) / 100
     
     datos['historial_pagos'] = st.sidebar.slider(
-        "Pagos Puntuales (%)",
-        min_value=0.0,
-        max_value=100.0,
-        value=85.0,
-        step=5.0,
-        help="Porcentaje de pagos realizados a tiempo"
+        "Pagos Puntuales (%)", 
+        0.0, 
+        100.0, 
+        85.0, 
+        5.0
     )
-    
+
+    # ====== Sección Operacional ======
     st.sidebar.markdown("---")
-    
-    # ========== INDICADORES OPERACIONALES ==========
-    st.sidebar.markdown("### ⚙️ Indicadores Operacionales")
+    st.sidebar.subheader("⚙️ Indicadores Operacionales")
     
     datos['certificacion_calidad'] = st.sidebar.checkbox(
-        "Certificación de Calidad (ISO 9001)",
-        value=True,
-        help="Cuenta con certificación ISO 9001 vigente"
+        "Certificación de Calidad (ISO 9001)", 
+        True
     )
     
     datos['capacidad_produccion'] = st.sidebar.slider(
-        "Capacidad de Producción (%)",
-        min_value=0.0,
-        max_value=100.0,
-        value=75.0,
-        step=5.0,
-        help="Utilización actual de la capacidad instalada"
+        "Capacidad de Producción (%)", 
+        0.0, 
+        100.0, 
+        75.0, 
+        5.0
     )
     
     datos['tasa_defectos'] = st.sidebar.slider(
-        "Tasa de Defectos (%)",
-        min_value=0.0,
-        max_value=20.0,
-        value=3.0,
-        step=0.5,
-        help="Porcentaje de productos defectuosos. Ideal: < 2%"
+        "Tasa de Defectos (%)", 
+        0.0, 
+        20.0, 
+        3.0, 
+        0.5
     )
     
     datos['cumplimiento_entregas'] = st.sidebar.slider(
-        "Cumplimiento de Entregas (%)",
-        min_value=0.0,
-        max_value=100.0,
-        value=90.0,
-        step=5.0,
-        help="Porcentaje de entregas realizadas a tiempo. Ideal: ≥ 95%"
+        "Cumplimiento de Entregas (%)", 
+        0.0, 
+        100.0, 
+        90.0, 
+        5.0
     )
-    
+
+    # ====== Sección Legal ======
     st.sidebar.markdown("---")
-    
-    # ========== INDICADORES LEGALES ==========
-    st.sidebar.markdown("### ⚖️ Indicadores Legales")
+    st.sidebar.subheader("⚖️ Indicadores Legales")
     
     datos['cumplimiento_legal'] = st.sidebar.checkbox(
-        "Cumplimiento Legal Completo",
-        value=True,
-        help="Cumple con todas las regulaciones y normativas aplicables"
+        "Cumplimiento Legal Completo", 
+        True
     )
     
     datos['certificacion_ambiental'] = st.sidebar.checkbox(
-        "Certificación Ambiental (ISO 14001)",
-        value=False,
-        help="Cuenta con certificación ambiental ISO 14001"
+        "Certificación Ambiental (ISO 14001)", 
+        False
     )
     
     datos['seguros_vigentes'] = st.sidebar.checkbox(
-        "Seguros de Responsabilidad Vigentes",
-        value=True,
-        help="Mantiene pólizas de seguro actualizadas"
+        "Seguros de Responsabilidad Vigentes", 
+        True
     )
-    
+
+    # ====== Sección Reputacional ======
     st.sidebar.markdown("---")
-    
-    # ========== INDICADORES REPUTACIONALES ==========
-    st.sidebar.markdown("### ⭐ Indicadores Reputacionales")
+    st.sidebar.subheader("⭐ Indicadores Reputacionales")
     
     datos['calificacion_mercado'] = st.sidebar.slider(
-        "Calificación de Mercado",
-        min_value=1.0,
-        max_value=5.0,
-        value=4.0,
-        step=0.1,
-        help="Calificación promedio de clientes (1-5 estrellas)"
+        "Calificación de Mercado", 
+        1.0, 
+        5.0, 
+        4.0, 
+        0.1
     )
     
     datos['quejas_clientes'] = st.sidebar.number_input(
-        "Quejas de Clientes (último año)",
-        min_value=0,
-        max_value=100,
-        value=3,
-        step=1,
-        help="Número de quejas formales recibidas"
+        "Quejas de Clientes (último año)", 
+        0, 
+        100, 
+        3
     )
     
     datos['referencias_positivas'] = st.sidebar.number_input(
-        "Referencias Positivas Verificadas",
-        min_value=0,
-        max_value=20,
-        value=5,
-        step=1,
-        help="Referencias comerciales positivas verificadas"
+        "Referencias Positivas Verificadas", 
+        0, 
+        20, 
+        5
     )
-    
-    # ========== METADATA ==========
+
+    # Agregar fecha de evaluación
     datos['fecha_evaluacion'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     return datos
-
-
-def mostrar_resumen_datos(datos: Dict[str, Any]) -> None:
-    """
-    Muestra un resumen de los datos ingresados en el sidebar
-    
-    Args:
-        datos: Diccionario con los datos del proveedor
-    """
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 Resumen de Datos")
-    
-    # Calcular un indicador general rápido
-    indicadores_positivos = sum([
-        datos.get('liquidez_corriente', 0) >= 1.5,
-        datos.get('endeudamiento', 1) <= 0.5,
-        datos.get('rentabilidad', 0) >= 0.10,
-        datos.get('certificacion_calidad', False),
-        datos.get('cumplimiento_legal', False),
-        datos.get('cumplimiento_entregas', 0) >= 90,
-        datos.get('calificacion_mercado', 0) >= 4.0
-    ])
-    
-    total_indicadores = 7
-    porcentaje = (indicadores_positivos / total_indicadores) * 100
-    
-    st.sidebar.info(f"""
-    **Indicadores Positivos:** {indicadores_positivos}/{total_indicadores}
-    
-    **Porcentaje:** {porcentaje:.0f}%
-    
-    ℹ️ *Esta es una evaluación preliminar. 
-    Presiona "Evaluar Proveedor" para el análisis completo.*
-    """)
-
-
-def validar_datos(datos: Dict[str, Any]) -> tuple[bool, str]:
-    """
-    Valida que los datos ingresados sean correctos
-    
-    Args:
-        datos: Diccionario con los datos del proveedor
-        
-    Returns:
-        Tupla (es_valido, mensaje_error)
-    """
-    # Validar que el nombre no esté vacío
-    if not datos.get('nombre') or datos['nombre'].strip() == "":
-        return False, "⚠️ El nombre del proveedor es obligatorio"
-    
-    # Validar rangos numéricos
-    if datos.get('liquidez_corriente', 0) < 0:
-        return False, "⚠️ La liquidez corriente no puede ser negativa"
-    
-    if not (0 <= datos.get('endeudamiento', 0) <= 1):
-        return False, "⚠️ El endeudamiento debe estar entre 0 y 1"
-    
-    if datos.get('tiempo_mercado', 0) < 0:
-        return False, "⚠️ Los años en el mercado no pueden ser negativos"
-    
-    # Todo válido
-    return True, "✅ Datos validados correctamente"
