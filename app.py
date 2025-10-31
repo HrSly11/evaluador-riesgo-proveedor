@@ -33,79 +33,46 @@ aplicar_estilos()
 
 
 # ========================================
-# FUNCIÓN PRINCIPAL
-# ========================================
-
-def main():
-    """
-    Función principal que orquesta la aplicación
-    """
-    
-    # ========== BANNER PRINCIPAL ==========
-    crear_banner("Sistema Experto de Evaluación de Riesgo de Proveedores")
-    
-    # ========== FORMULARIO EN SIDEBAR ==========
-    datos = formulario_proveedor()
-    
-    # ========== BOTÓN DE EVALUACIÓN ==========
-    if st.sidebar.button("🚀 Evaluar Proveedor", type="primary", use_container_width=True):
-        # Realizar evaluación
-        resultado = _ejecutar_evaluacion(datos)
-        
-        # Guardar en session state
-        st.session_state['resultado'] = resultado
-        st.session_state['datos'] = datos
-        
-        # Mostrar resultados
-        mostrar_resultados(resultado, datos)
-    
-    # ========== MOSTRAR RESULTADOS PREVIOS ==========
-    elif 'resultado' in st.session_state and 'datos' in st.session_state:
-        mostrar_resultados(
-            st.session_state['resultado'],
-            st.session_state['datos']
-        )
-    
-    # ========== PANTALLA INICIAL ==========
-    else:
-        mostrar_pantalla_inicio()
-
-
-# ========================================
 # FUNCIONES AUXILIARES
 # ========================================
 
 def _ejecutar_evaluacion(datos: dict) -> dict:
-    """
-    Ejecuta la evaluación del proveedor usando el motor de inferencia
+    """Ejecuta la evaluación usando el motor de reglas"""
     
-    Args:
-        datos: Diccionario con los datos del proveedor
-        
-    Returns:
-        Diccionario con los resultados de la evaluación
-    """
-    # Crear instancia del motor
     motor = MotorEvaluacionRiesgo()
     motor.reset()
-    
-    # Filtrar datos para el motor (excluir metadata)
-    datos_motor = {
-        k: v for k, v in datos.items() 
-        if k not in ['nombre', 'fecha_evaluacion']
-    }
-    
-    # Declarar hechos
+
+    # No mandar campos visuales al motor
+    datos_motor = {k: v for k, v in datos.items() if k not in ['nombre', 'fecha_evaluacion']}
+
     motor.declare(DatosProveedor(**datos_motor))
-    
-    # Ejecutar motor de inferencia con spinner
+
     with st.spinner("🔄 Analizando proveedor... Por favor espera."):
         motor.run()
-    
-    # Obtener resultado
-    resultado = motor.obtener_resultado()
-    
-    return resultado
+
+    return motor.obtener_resultado()
+
+
+# ========================================
+# FUNCIÓN PRINCIPAL
+# ========================================
+
+def main():
+    crear_banner("Sistema Experto de Evaluación de Riesgo de Proveedores")
+
+    datos = formulario_proveedor()
+
+    if st.sidebar.button("🚀 Evaluar Proveedor", type="primary", use_container_width=True):
+        resultado = _ejecutar_evaluacion(datos)
+        st.session_state['resultado'] = resultado
+        st.session_state['datos'] = datos
+        mostrar_resultados(resultado, datos)
+
+    elif 'resultado' in st.session_state and 'datos' in st.session_state:
+        mostrar_resultados(st.session_state['resultado'], st.session_state['datos'])
+
+    else:
+        mostrar_pantalla_inicio()
 
 
 # ========================================
