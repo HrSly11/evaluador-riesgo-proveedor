@@ -2,7 +2,8 @@
 Página de resultados de la evaluación
 """
 import streamlit as st
-from engine import ExplicadorDecisiones
+import plotly.graph_objects as go
+from engine.explicador import ExplicadorDecisiones
 from ui.components import (
     crear_gauge_puntuacion, 
     crear_tarjeta_resultado, 
@@ -78,7 +79,13 @@ def mostrar_resultados(resultado, datos):
     else:
         st.warning(resultado['recomendacion'])
 
-    # Mostrar reglas activadas y explicaciones
+    # ========== RESUMEN EJECUTIVO ==========
+    st.markdown("---")
+    resumen_ejecutivo = explicador.generar_resumen_ejecutivo(resultado)
+    st.markdown(resumen_ejecutivo)
+
+    # ========== REGLAS ACTIVADAS ==========
+    st.markdown("---")
     if resultado.get('explicaciones'):
         st.markdown("### ⚙️ Reglas Activadas y Explicaciones")
         
@@ -91,8 +98,72 @@ def mostrar_resultados(resultado, datos):
                 ), 
                 unsafe_allow_html=True
             )
+        
+        # ========== CADENA DE RAZONAMIENTO ==========
+        st.markdown("---")
+        cadena_razonamiento = explicador.generar_cadena_razonamiento(resultado['explicaciones'])
+        st.markdown(cadena_razonamiento)
+        
     else:
         st.info("No se activaron reglas específicas para este proveedor.")
+
+    # ========== PLAN DE MITIGACIÓN ==========
+    st.markdown("---")
+    plan_mitigacion = explicador.generar_plan_mitigacion(resultado)
+    st.markdown(plan_mitigacion)
+
+    # ========== VISUALIZACIÓN DE MÉTRICAS ==========
+    st.markdown("---")
+    st.markdown("### 📊 Análisis por Categorías")
+    
+    metricas = explicador.generar_metricas_visuales(resultado)
+    
+    # Crear gráfico de barras para impacto por categoría
+    if metricas['categorias']:
+        col_viz1, col_viz2 = st.columns(2)
+        
+        with col_viz1:
+            st.markdown("#### Impacto por Categoría")
+            categorias_nombres = list(metricas['categorias'].keys())
+            categorias_valores = list(metricas['categorias'].values())
+            
+            fig_categorias = go.Figure(data=[
+                go.Bar(
+                    x=categorias_nombres,
+                    y=categorias_valores,
+                    marker_color=['#ff6b6b', '#4ecdc4', '#45b7d1', '#feca57']
+                )
+            ])
+            fig_categorias.update_layout(
+                xaxis_title="Categoría",
+                yaxis_title="Puntos de Impacto Negativo",
+                height=300,
+                margin=dict(l=20, r=20, t=30, b=20)
+            )
+            st.plotly_chart(fig_categorias, use_container_width=True)
+        
+        with col_viz2:
+            st.markdown("#### Distribución de Alertas")
+            alertas = metricas['alertas_por_nivel']
+            
+            if sum(alertas.values()) > 0:
+                fig_alertas = go.Figure(data=[
+                    go.Pie(
+                        labels=list(alertas.keys()),
+                        values=list(alertas.values()),
+                        marker_colors=['#ff6b6b', '#feca57', '#45b7d1']
+                    )
+                ])
+                fig_alertas.update_layout(
+                    height=300,
+                    margin=dict(l=20, r=20, t=30, b=20)
+                )
+                st.plotly_chart(fig_alertas, use_container_width=True)
+            else:
+                st.info("No hay alertas registradas para este proveedor.")
+
+    # ========== DESCARGA DE INFORME ==========
+    st.markdown("---")
 
     # Botón de descarga del informe
     informe_md = explicador.generar_informe_completo(resultado, datos)
